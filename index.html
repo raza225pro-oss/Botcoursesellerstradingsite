@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>TradeVault - Trading Tools & Indicators</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+    --bg: #0b0e11; --bg2: #111419; --bg3: #1a1e24;
+    --card: #181a20; --card2: #1e2329; --border: #2b3139;
+    --text: #eaecef; --text2: #848e9c; --text3: #5e6673;
+    --green: #0ecb81; --red: #f6465d; --gold: #f0b90b; --cyan: #1e80ff;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; overflow: hidden; }
+input, button, textarea, select { font-family: var(--font); outline: none; }
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#splash {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg); z-index: 9999;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    transition: opacity 0.5s ease;
+}
+#splash.fade-out { opacity: 0; pointer-events: none; }
+.splash-chart { width: 280px; height: 100px; margin-bottom: 30px; position: relative; }
+.splash-chart svg { width: 100%; height: 100%; }
+.splash-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, var(--gold), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+.splash-sub { font-size: 12px; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
+.splash-bar-wrap { width: 240px; height: 3px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.splash-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 3px; transition: width 0.3s; }
+.splash-status { font-size: 11px; color: var(--text2); margin-top: 12px; font-weight: 400; }
+.splash-percent { font-size: 14px; font-weight: 700; color: var(--green); margin-top: 8px; }
+#view-access { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.access-box { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 24px; text-align: center; }
+.access-icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(30,128,255,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px; color: var(--cyan); }
+.access-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.access-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+.access-input { width: 100%; padding: 12px 14px; border-radius: var(--radius); background: var(--bg2); border: 1px solid var(--border); color: var(--text); font-size: 14px; margin-bottom: 12px; text-align: center; }
+.access-input::placeholder { color: var(--text3); }
+.access-input:focus { border-color: var(--cyan); }
+.btn-primary { width: 100%; padding: 12px; border-radius: var(--radius); border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--cyan); color: #fff; transition: 0.2s; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-secondary { width: 100%; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); font-size: 14px; font-weight: 500; cursor: pointer; background: transparent; color: var(--text2); transition: 0.2s; margin-top: 8px; }
+.btn-secondary:active { transform: scale(0.98); }
+.btn-gold { width: 100%; padding: 12px; border-radius: var(--radius); border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, var(--gold), #f0d060); color: #000; transition: 0.2s; }
+.btn-gold:active { transform: scale(0.98); }
+.btn-green { width: 100%; padding: 12px; border-radius: var(--radius); border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--green); color: #000; transition: 0.2s; }
+.btn-green:active { transform: scale(0.98); }
+.divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.access-footer { font-size: 10px; color: var(--text3); margin-top: 20px; letter-spacing: 1px; }
+
+#view-forcejoin { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.fj-box { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--red); border-radius: 12px; padding: 32px 24px; text-align: center; }
+.fj-icon { font-size: 40px; color: var(--red); margin-bottom: 12px; }
+.fj-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.fj-note { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-size: 13px; color: var(--text2); margin: 16px 0; line-height: 1.5; }
+.fj-btn { width: 100%; padding: 13px; border-radius: var(--radius); border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; transition: 0.2s; }
+.fj-btn:active { transform: scale(0.98); }
+.fj-btn.telegram { background: #0088cc; color: #fff; }
+.fj-btn.whatsapp { background: #25D366; color: #fff; }
+.fj-btn.verified { background: #1a2a1e; color: #5a8a5a; }
+.fj-verify { width: 100%; padding: 11px; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+.fj-verify:active { transform: scale(0.98); }
+.fj-enter { width: 100%; padding: 13px; border-radius: var(--radius); border: none; font-size: 15px; font-weight: 600; cursor: pointer; background: var(--green); color: #000; margin-top: 8px; transition: 0.2s; }
+.fj-enter:active { transform: scale(0.98); }
+
+#view-account-form { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 100; display: flex; justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto; }
+.account-form-box { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px 20px; margin-top: 20px; }
+.account-form-box h2 { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+.account-form-box .sub { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 20px; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 12px 14px; border-radius: var(--radius); background: var(--bg2); border: 1px solid var(--border); color: var(--text); font-size: 14px; }
+.form-group input:focus { border-color: var(--cyan); }
+.form-group input::placeholder { color: var(--text3); }
+.file-upload { position: relative; border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.2s; }
+.file-upload:hover { border-color: var(--cyan); }
+.file-upload input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.file-upload i { font-size: 24px; color: var(--text3); margin-bottom: 6px; }
+.file-upload span { display: block; font-size: 12px; color: var(--text3); }
+.upload-preview { width: 100%; max-height: 200px; object-fit: contain; border-radius: var(--radius); margin-top: 8px; display: none; background: var(--bg2); }
+
+#view-pending { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.pending-box { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--gold); border-radius: 12px; padding: 32px 24px; text-align: center; }
+.pending-box .icon { font-size: 48px; color: var(--gold); margin-bottom: 12px; }
+.pending-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.pending-box p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+#view-main { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 100; display: flex; flex-direction: column; }
+.trade-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card); flex-shrink: 0; }
+.trade-brand { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.trade-brand .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+.trade-brand .logo-text { background: linear-gradient(135deg, var(--gold), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.trade-user { font-size: 11px; color: var(--text2); text-align: right; }
+.trade-user span { display: block; }
+.trade-user .label { font-size: 10px; color: var(--text3); }
+.ticker { display: flex; gap: 0; overflow-x: auto; padding: 6px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; -webkit-overflow-scrolling: touch; }
+.ticker::-webkit-scrollbar { display: none; }
+.ticker-item { flex-shrink: 0; padding: 2px 12px; border-right: 1px solid var(--border); font-size: 11px; font-weight: 500; }
+.ticker-item:last-child { border-right: none; }
+.ticker-symbol { color: var(--text); font-weight: 600; }
+.ticker-price { margin-left: 4px; }
+.ticker-price.up { color: var(--green); }
+.ticker-price.down { color: var(--red); }
+.ticker-change { margin-left: 4px; font-size: 10px; }
+.ticker-change.up { color: var(--green); }
+.ticker-change.down { color: var(--red); }
+.search-bar { padding: 8px 16px; background: var(--bg2); flex-shrink: 0; }
+.search-bar input { width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border); color: var(--text); font-size: 13px; }
+.search-bar input::placeholder { color: var(--text3); }
+.search-wrap { position: relative; }
+.search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; }
+#dash-content { flex: 1; overflow-y: auto; padding: 12px 16px 80px; -webkit-overflow-scrolling: touch; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.section-header h2 { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.section-header .count { font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 8px; border-radius: 10px; }
+.instrument-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.instrument-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 6px; }
+.instrument-card:active { transform: scale(0.97); border-color: var(--cyan); }
+.instrument-card .icon-wrap { width: 36px; height: 36px; border-radius: var(--radius); background: rgba(30,128,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--cyan); }
+.instrument-card .icon-wrap.gold { background: rgba(240,185,11,0.08); color: var(--gold); }
+.instrument-card .icon-wrap.green { background: rgba(14,203,129,0.08); color: var(--green); }
+.instrument-card .icon-wrap.red { background: rgba(246,70,93,0.08); color: var(--red); }
+.instrument-card .icon-wrap.purple { background: rgba(175,82,222,0.08); color: #AF52DE; }
+.instrument-card .name { font-size: 13px; font-weight: 600; }
+.instrument-card .badge { font-size: 10px; color: var(--text3); background: var(--bg2); padding: 2px 8px; border-radius: 4px; align-self: flex-start; }
+.instrument-card .change { font-size: 12px; font-weight: 600; }
+.instrument-card .change.up { color: var(--green); }
+.instrument-card .change.down { color: var(--red); }
+.list-item { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
+.list-item:active { transform: scale(0.98); border-color: var(--cyan); }
+.list-item .li-icon { width: 40px; height: 40px; border-radius: var(--radius); background: rgba(30,128,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; color: var(--cyan); overflow: hidden; }
+.list-item .li-icon img { width: 100%; height: 100%; object-fit: cover; }
+.list-item .li-icon.gold { background: rgba(240,185,11,0.08); color: var(--gold); }
+.list-item .li-icon.purple { background: rgba(175,82,222,0.08); color: #AF52DE; }
+.list-item .li-body { flex: 1; min-width: 0; }
+.list-item .li-name { font-size: 14px; font-weight: 600; }
+.list-item .li-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.list-item .li-arrow { color: var(--text3); font-size: 12px; }
+.apk-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+.apk-grid::-webkit-scrollbar { display: none; }
+.apk-card { min-width: 110px; max-width: 110px; flex-shrink: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; cursor: pointer; transition: 0.2s; }
+.apk-card:active { transform: scale(0.96); border-color: var(--gold); }
+.apk-card .apk-icon { width: 48px; height: 48px; border-radius: var(--radius); background: rgba(240,185,11,0.08); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--gold); overflow: hidden; }
+.apk-card .apk-icon img { width: 100%; height: 100%; object-fit: cover; }
+.apk-card .apk-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.apk-card .apk-type { font-size: 9px; color: var(--text3); margin-top: 2px; }
+.profile-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 16px; }
+.profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: rgba(30,128,255,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 28px; color: var(--cyan); }
+.profile-name { font-size: 20px; font-weight: 700; }
+.profile-tag { font-size: 11px; color: var(--green); background: rgba(14,203,129,0.1); padding: 3px 12px; border-radius: 12px; display: inline-block; margin-top: 4px; }
+.profile-detail { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.profile-detail .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.profile-detail .row:last-child { border-bottom: none; }
+.profile-detail .label { font-size: 13px; color: var(--text2); }
+.profile-detail .value { font-size: 13px; font-weight: 600; }
+.btn-danger { width: 100%; padding: 12px; border-radius: var(--radius); border: 1px solid rgba(246,70,93,0.3); background: rgba(246,70,93,0.06); color: var(--red); font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+.btn-danger:active { transform: scale(0.98); }
+.premium-banner { background: linear-gradient(135deg, rgba(240,185,11,0.1), rgba(240,185,11,0.02)); border: 1px solid rgba(240,185,11,0.3); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+.premium-banner i { font-size: 36px; color: var(--gold); margin-bottom: 8px; }
+.premium-banner h3 { font-size: 18px; font-weight: 700; color: var(--gold); }
+.premium-banner p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.premium-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.premium-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: var(--card); border-top: 1px solid var(--border); display: flex; overflow-x: auto; z-index: 200; -webkit-overflow-scrolling: touch; }
+.bottom-nav::-webkit-scrollbar { display: none; }
+.nav-item { flex: 1 0 auto; min-width: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text3); font-size: 9px; font-weight: 500; cursor: pointer; transition: 0.2s; padding: 4px 8px 6px; }
+.nav-item i { font-size: 16px; }
+.nav-item.active { color: var(--cyan); }
+.toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 6px; width: calc(100% - 32px); max-width: 400px; }
+.toast { background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow); animation: slideDown 0.3s forwards, fadeOut 0.3s 2.7s forwards; }
+.toast i { font-size: 15px; }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.success i { color: var(--green); }
+.toast.error { border-left: 3px solid var(--red); }
+.toast.error i { color: var(--red); }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; gap: 8px; }
+.empty-state i { font-size: 32px; color: var(--text3); opacity: 0.4; }
+.empty-state span { font-size: 13px; color: var(--text2); }
+</style>
+</head>
+<body>
+<div id="app">
+<div class="toast-container" id="toast-container"></div>
+<div id="splash">
+<div class="splash-chart">
+<svg viewBox="0 0 280 100" preserveAspectRatio="none">
+<defs><linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(14,203,129,0.3)"/><stop offset="100%" stop-color="rgba(14,203,129,0)"/></linearGradient></defs>
+<path d="M0,60 Q20,55 40,50 T80,45 T120,35 T160,40 T200,25 T240,30 T280,20" stroke="#0ecb81" stroke-width="2" fill="none" stroke-linecap="round"/>
+<path d="M0,60 Q20,55 40,50 T80,45 T120,35 T160,40 T200,25 T240,30 T280,20 L280,100 L0,100 Z" fill="url(#chartGrad)" opacity="0.5"/>
+</svg>
+</div>
+<div class="splash-title">TradeVault</div>
+<div class="splash-sub">Professional Trading Tools</div>
+<div class="splash-bar-wrap"><div class="splash-bar" id="splash-bar"></div></div>
+<div class="splash-percent" id="splash-percent">0%</div>
+<div class="splash-status" id="splash-status">Initializing...</div>
+</div>
+<div id="view-access" class="hidden">
+<div class="access-box">
+<div class="access-icon"><i class="fa-solid fa-chart-line"></i></div>
+<div class="access-title">TradeVault</div>
+<div class="access-sub">Enter your license key or get one</div>
+<form onsubmit="App.keyLogin(event)" style="width:100%;">
+<input type="text" id="key-input" class="access-input" placeholder="License Key" autocapitalize="off" autocomplete="off">
+<button type="submit" class="btn-primary"><i class="fa-solid fa-key"></i> Enter License Key</button>
+</form>
+<div class="divider">new here?</div>
+<button class="btn-gold" onclick="App.startGetKey()"><i class="fa-solid fa-right-to-bracket"></i> Get Key</button>
+<div class="access-footer">DEVELOPED BY SARDAR DIGITAL HUB</div>
+</div>
+</div>
+<div id="view-forcejoin" class="hidden">
+<div class="fj-box">
+<div class="fj-icon"><i class="fa-solid fa-lock"></i></div>
+<div class="fj-title">Join Our Community</div>
+<div class="fj-note" id="fj-note">Join our community to get your license key.</div>
+<div id="fj-buttons"></div>
+<button class="fj-verify" id="btn-verify-status" onclick="App.verifyForceJoin()">Verify & Continue</button>
+</div>
+</div>
+<div id="view-account-form" class="hidden">
+<div class="account-form-box">
+<h2>Create Your Account</h2>
+<div class="sub">Fill in your details after creating your account</div>
+<div style="margin-bottom:16px;">
+<a id="affiliate-link" href="#" target="_blank" class="btn-gold" style="display:block;text-decoration:none;"><i class="fa-solid fa-external-link-alt"></i> Create Account Now</a>
+</div>
+<form id="account-form" style="width:100%;">
+<div class="form-group"><label>Your Account ID</label><input type="text" id="reg-account-id" placeholder="Enter your account ID" required></div>
+<div class="form-group"><label>Your Gmail</label><input type="email" id="reg-gmail" placeholder="you@gmail.com" required></div>
+<div class="form-group" id="social-field"><label id="social-label">WhatsApp Number</label><input type="text" id="reg-social" placeholder="03XXXXXXXXX"></div>
+<div class="form-group"><label>Deposit Screenshot (with ID visible)</label>
+<div class="file-upload" id="ss-upload"><input type="file" id="reg-ss" accept="image/*"><i class="fa-solid fa-image"></i><span>Tap to upload screenshot</span></div>
+<img id="reg-ss-preview" class="upload-preview">
+<input type="hidden" id="reg-ss-base64">
+</div>
+<button type="submit" class="btn-green"><i class="fa-solid fa-paper-plane"></i> Submit Request</button>
+</form>
+</div>
+</div>
+<div id="view-pending" class="hidden">
+<div class="pending-box">
+<div class="icon"><i class="fa-solid fa-clock"></i></div>
+<h2>Request Submitted</h2>
+<p>Your request is pending admin approval. Once approved, your license key will be sent to your Gmail. Please wait for confirmation.</p>
+<button class="btn-secondary" style="margin-top:16px;" onclick="App.checkRequestStatus()"><i class="fa-solid fa-rotate"></i> Check Status</button>
+</div>
+</div>
+<div id="view-main" class="hidden">
+<div class="trade-header">
+<div class="trade-brand"><div class="logo-dot"></div><span class="logo-text">TradeVault</span></div>
+<div class="trade-user"><span id="dash-user">Trader</span><span class="label">Active</span></div>
+</div>
+<div class="ticker" id="ticker">
+<div class="ticker-item"><span class="ticker-symbol">BTC/USDT</span><span class="ticker-price up">67,423</span><span class="ticker-change up">+2.4%</span></div>
+<div class="ticker-item"><span class="ticker-symbol">ETH/USDT</span><span class="ticker-price up">3,521</span><span class="ticker-change up">+1.8%</span></div>
+<div class="ticker-item"><span class="ticker-symbol">SOL/USDT</span><span class="ticker-price up">142</span><span class="ticker-change up">+5.2%</span></div>
+</div>
+<div class="search-bar"><div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-input" placeholder="Search..." oninput="App.filterItems(this.value)"></div></div>
+<div id="dash-content"></div>
+<div class="bottom-nav">
+<div class="nav-item active" onclick="App.switchTab('indicators',this)"><i class="fa-solid fa-chart-line"></i>Indicators</div>
+<div class="nav-item" onclick="App.switchTab('apps',this)"><i class="fa-brands fa-android"></i>Apps</div>
+<div class="nav-item" onclick="App.switchTab('bots',this)"><i class="fa-solid fa-robot"></i>Bots</div>
+<div class="nav-item" onclick="App.switchTab('courses',this)"><i class="fa-solid fa-graduation-cap"></i>Courses</div>
+<div class="nav-item" onclick="App.switchTab('books',this)"><i class="fa-solid fa-book"></i>Books</div>
+<div class="nav-item" onclick="App.switchTab('scripts',this)"><i class="fa-solid fa-code"></i>Scripts</div>
+<div class="nav-item" onclick="App.switchTab('profile',this)"><i class="fa-solid fa-user"></i>Portfolio</div>
+<div class="nav-item" onclick="App.switchTab('premium',this)"><i class="fa-solid fa-crown"></i>Premium</div>
+</div>
+</div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyBkGbC39STD3bApkh6NHNEMh29cpI-nekM",
+    authDomain: "tradingwebsitebotsale.firebaseapp.com",
+    databaseURL: "https://tradingwebsitebotsale-default-rtdb.firebaseio.com",
+    projectId: "tradingwebsitebotsale",
+    storageBucket: "tradingwebsitebotsale.firebasestorage.app",
+    messagingSenderId: "889896541180",
+    appId: "1:889896541180:web:7bd4b8ac7ec67872923079",
+    measurementId: "G-L2MESWCTM6"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const h = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+const App = {
+    state: { admin:{}, keys:[], tools:[], links:[], courses:[], premiumConfig:{}, premiumContent:[], premiumKeys:[], registrationRequests:[] },
+    currentTab: 'indicators',
+    sessionKey: 'tv_session',
+    fjSessionKey: 'tv_fj_verified',
+    premiumSessionKey: 'tv_premium_access',
+    regSessionKey: 'tv_reg_request',
+    tgClicked: false, waClicked: false,
+
+    init() {
+        document.getElementById('dash-content').addEventListener('click', (e) => {
+            const link = e.target.closest('[data-link-url]'); if (link) { window.open(link.dataset.linkUrl, '_blank'); return; }
+            const course = e.target.closest('[data-course-url]'); if (course) { window.open(course.dataset.courseUrl, '_blank'); return; }
+            const tool = e.target.closest('[data-tool-id]'); if (tool) { this.openTool(tool.dataset.toolId); return; }
+        });
+        document.getElementById('reg-ss').addEventListener('change', (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w=img.width, h=img.height, maxW=800;
+                    if(w>maxW){h*=maxW/w;w=maxW;}
+                    canvas.width=w; canvas.height=h;
+                    canvas.getContext('2d').drawImage(img,0,0,w,h);
+                    const dataUrl = canvas.toDataURL('image/webp',0.7);
+                    document.getElementById('reg-ss-base64').value = dataUrl;
+                    document.getElementById('reg-ss-preview').src = dataUrl;
+                    document.getElementById('reg-ss-preview').style.display = 'block';
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+        this.runSplash();
+    },
+
+    toast(msg, type='success') {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = 'toast ' + type;
+        t.innerHTML = (type==='success'?'<i class="fa-solid fa-circle-check"></i>':'<i class="fa-solid fa-triangle-exclamation"></i>') + '<span>' + msg + '</span>';
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    },
+
+    runSplash() {
+        const bar = document.getElementById('splash-bar'), status = document.getElementById('splash-status'), percent = document.getElementById('splash-percent');
+        const msgs = ['Connecting to Market Data...','Loading Trading Modules...','Verifying License...','Opening Trade Terminal...'];
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15 + 5; if (progress > 100) progress = 100;
+            const dp = Math.round(progress);
+            bar.style.width = dp + '%'; percent.textContent = dp + '%';
+            status.textContent = msgs[Math.min(Math.floor(progress / 25), msgs.length - 1)];
+            if (progress >= 100) { clearInterval(interval); setTimeout(() => this.connectFirebase(), 400); }
+        }, 300);
+    },
+
+    connectFirebase() {
+        database.ref('/').once('value', (snap) => {
+            const data = snap.val();
+            if (!data || !data.admin) {
+                document.getElementById('splash-status').textContent = 'Configuring Database...';
+                const defaults = {
+                    admin: { user:'admin', pass:'admin', waLink:'', keySystemActive:true, forceJoin:{ active:true, telegram:'', whatsapp:'', note:'Join our community to get your license key!' }, registrationConfig:{ affiliateLink:'', socialFieldType:'WhatsApp Number', socialFieldRequired:true, depositAmount:20 } },
+                    keys: [{ id:'k_master', key:'darkmasterub', name:'Master Access', limit:0, uses:0, expiry:'', active:true, tools:['all'] }],
+                    tools: [], links: [], courses: [], logs: [], registrationRequests: []
+                };
+                database.ref('/').set(defaults).then(() => { database.ref('/').once('value', (snap2) => { this.onDataReady(snap2.val()); }); });
+                return;
+            }
+            this.onDataReady(data);
+        }, () => { 
+            document.getElementById('splash-status').textContent = 'Starting in offline mode...';
+            this.onDataReady({ admin: {}, keys: [], tools: [], links: [], courses: [], premiumConfig: {}, premiumContent: [], premiumKeys: [], registrationRequests: [] });
+        });
+    },
+
+    onDataReady(data) {
+        this.state.admin = data.admin || {};
+        this.state.keys = data.keys || [];
+        this.state.tools = data.tools || [];
+        this.state.links = data.links || [];
+        this.state.courses = data.courses || [];
+        this.state.premiumConfig = data.premiumConfig || {};
+        this.state.premiumContent = data.premiumContent || [];
+        this.state.premiumKeys = data.premiumKeys || [];
+        this.state.registrationRequests = data.registrationRequests || [];
+        if (!this.state.admin.forceJoin) this.state.admin.forceJoin = { active:true, telegram:'', whatsapp:'', note:'' };
+        if (!this.state.admin.registrationConfig) this.state.admin.registrationConfig = { affiliateLink:'', socialFieldType:'WhatsApp Number', socialFieldRequired:true, depositAmount:20 };
+        const fj = this.state.admin.forceJoin;
+        const hasLinks = (fj.telegram && fj.telegram.trim()) || (fj.whatsapp && fj.whatsapp.trim());
+        if (fj.active === false && !hasLinks) { fj.active = true; database.ref('admin/forceJoin/active').set(true); }
+        setTimeout(() => {
+            document.getElementById('splash').classList.add('fade-out');
+            setTimeout(() => { document.getElementById('splash').style.display = 'none'; this.handleRouting(); }, 500);
+        }, 500);
+    },
+
+    handleRouting() {
+        if (sessionStorage.getItem(this.sessionKey)) {
+            if (this.state.admin.forceJoin && this.state.admin.forceJoin.active && !sessionStorage.getItem(this.fjSessionKey)) { this.showForceJoin(); return; }
+            this.showMain(); return;
+        }
+        const pendingReg = sessionStorage.getItem(this.regSessionKey);
+        if (pendingReg) { this.checkRequestStatus(); return; }
+        this.showAccessScreen();
+    },
+
+    showAccessScreen() {
+        document.getElementById('view-access').classList.remove('hidden');
+        document.getElementById('view-forcejoin').classList.add('hidden');
+        document.getElementById('view-account-form').classList.add('hidden');
+        document.getElementById('view-pending').classList.add('hidden');
+    },
+
+    startGetKey() {
+        if (this.state.admin.forceJoin && this.state.admin.forceJoin.active) {
+            this.showForceJoin();
+        } else {
+            this.showAccountForm();
+        }
+    },
+
+    showForceJoin() {
+        document.getElementById('view-access').classList.add('hidden');
+        document.getElementById('view-account-form').classList.add('hidden');
+        document.getElementById('view-pending').classList.add('hidden');
+        const el = document.getElementById('view-forcejoin');
+        el.classList.remove('hidden');
+        const fj = this.state.admin.forceJoin;
+        document.getElementById('fj-note').textContent = fj.note || 'Join our community to get your license key.';
+        const hasTg = fj.telegram && fj.telegram.trim().length > 0;
+        const hasWa = fj.whatsapp && fj.whatsapp.trim().length > 0;
+        let btns = '';
+        if (hasTg) btns += '<a href="'+h(fj.telegram)+'" target="_blank" class="fj-btn telegram" onclick="App.markTgClicked()"><i class="fa-brands fa-telegram"></i> Join Telegram</a>';
+        if (hasWa) btns += '<a href="'+h(fj.whatsapp)+'" target="_blank" class="fj-btn whatsapp" onclick="App.markWaClicked()"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp</a>';
+        document.getElementById('fj-buttons').innerHTML = btns;
+        const verifyBtn = document.getElementById('btn-verify-status');
+        if (!hasTg && !hasWa) { verifyBtn.textContent = 'Continue'; verifyBtn.disabled = false; verifyBtn.style.opacity = '1'; }
+        else { verifyBtn.textContent = 'Verify & Continue'; verifyBtn.disabled = false; verifyBtn.style.opacity = '1'; }
+    },
+
+    markTgClicked() { this.tgClicked = true; },
+    markWaClicked() { this.waClicked = true; },
+
+    verifyForceJoin() {
+        const fj = this.state.admin.forceJoin;
+        const hasTg = fj.telegram && fj.telegram.trim().length > 0;
+        const hasWa = fj.whatsapp && fj.whatsapp.trim().length > 0;
+        if (hasTg || hasWa) {
+            if ((hasTg && !this.tgClicked) || (hasWa && !this.waClicked)) { this.toast('Please click all channel links first', 'error'); return; }
+        }
+        sessionStorage.setItem(this.fjSessionKey, 'true');
+        this.showAccountForm();
+    },
+
+    showAccountForm() {
+        document.getElementById('view-access').classList.add('hidden');
+        document.getElementById('view-forcejoin').classList.add('hidden');
+        document.getElementById('view-pending').classList.add('hidden');
+        const el = document.getElementById('view-account-form');
+        el.classList.remove('hidden');
+        const rc = this.state.admin.registrationConfig || {};
+        document.getElementById('affiliate-link').href = rc.affiliateLink || '#';
+        const socialLabel = document.getElementById('social-label');
+        socialLabel.textContent = rc.socialFieldType || 'WhatsApp Number';
+        const socialField = document.getElementById('social-field');
+        if (rc.socialFieldRequired === false) { socialField.style.display = 'none'; document.getElementById('reg-social').required = false; }
+        else { socialField.style.display = 'block'; document.getElementById('reg-social').required = true; }
+        document.getElementById('account-form').onsubmit = (e) => this.submitAccountRequest(e);
+    },
+
+    submitAccountRequest(e) {
+        e.preventDefault();
+        const accountId = document.getElementById('reg-account-id').value.trim();
+        const gmail = document.getElementById('reg-gmail').value.trim();
+        const social = document.getElementById('reg-social').value.trim();
+        const ss = document.getElementById('reg-ss-base64').value;
+        if (!accountId) { this.toast('Enter your account ID','error'); return; }
+        if (!gmail) { this.toast('Enter your Gmail','error'); return; }
+        const rc = this.state.admin.registrationConfig || {};
+        if (rc.socialFieldRequired !== false && !social) { this.toast('Enter your '+(rc.socialFieldType||'contact'),'error'); return; }
+        if (!ss) { this.toast('Upload deposit screenshot','error'); return; }
+        const id = 'req_' + Math.random().toString(36).substr(2,9);
+        const request = { id, accountId, gmail, social, socialType: rc.socialFieldType||'WhatsApp Number', screenshot: ss, status: 'pending', time: new Date().toISOString() };
+        database.ref('registrationRequests').once('value', (snap) => {
+            const arr = snap.val() || [];
+            arr.push(request);
+            database.ref('registrationRequests').set(arr).then(() => {
+                sessionStorage.setItem(this.regSessionKey, id);
+                this.toast('Request submitted! Wait for approval.');
+                this.showPendingScreen();
+            }).catch(() => { this.toast('Failed to submit','error'); });
+        });
+    },
+
+    showPendingScreen() {
+        document.getElementById('view-access').classList.add('hidden');
+        document.getElementById('view-forcejoin').classList.add('hidden');
+        document.getElementById('view-account-form').classList.add('hidden');
+        document.getElementById('view-pending').classList.remove('hidden');
+    },
+
+    checkRequestStatus() {
+        const reqId = sessionStorage.getItem(this.regSessionKey);
+        if (!reqId) { this.showAccessScreen(); return; }
+        database.ref('registrationRequests').once('value', (snap) => {
+            const arr = snap.val() || [];
+            const req = arr.find(r => r.id === reqId);
+            if (!req) { sessionStorage.removeItem(this.regSessionKey); this.showAccessScreen(); return; }
+            if (req.status === 'approved') {
+                sessionStorage.removeItem(this.regSessionKey);
+                sessionStorage.setItem(this.sessionKey, JSON.stringify({ key: req.generatedKey, name: 'License: '+req.accountId, type: 'key', _t: Date.now() }));
+                this.toast('Account approved! License: ' + req.generatedKey);
+                this.handleRouting();
+            } else if (req.status === 'denied') {
+                sessionStorage.removeItem(this.regSessionKey);
+                this.toast('Request was denied. Try again.','error');
+                this.showAccessScreen();
+            } else {
+                this.toast('Still pending approval.','error');
+            }
+        });
+    },
+
+    keyLogin(e) {
+        e.preventDefault();
+        const inputKey = document.getElementById('key-input').value.trim();
+        const keyData = this.state.keys.find(k => k.key === inputKey && k.active);
+        if (!keyData) { this.toast('Invalid or inactive license key', 'error'); return; }
+        if (keyData.expiry && new Date(keyData.expiry) < new Date()) { this.toast('This license key has expired', 'error'); return; }
+        const keyIndex = this.state.keys.indexOf(keyData);
+        const usesRef = database.ref('keys/' + keyIndex + '/uses');
+        usesRef.transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
+            if (error || !committed) { this.toast('Key usage error', 'error'); return; }
+            const newCount = snapshot.val();
+            if (keyData.limit > 0 && newCount > keyData.limit) { this.toast('License key usage limit reached', 'error'); usesRef.transaction(c => (c || 1) - 1); return; }
+            keyData.uses = newCount;
+            sessionStorage.setItem(this.sessionKey, JSON.stringify({ key: inputKey, name: keyData.name, type: 'key', _t: Date.now() }));
+            this.showMain();
+        });
+    },
+
+    showMain() {
+        let session;
+        try { session = JSON.parse(sessionStorage.getItem(this.sessionKey) || '{}'); } catch(e) { session = {}; }
+        if (!session.type || !session._t || Date.now() - session._t > 86400000) {
+            sessionStorage.removeItem(this.sessionKey); sessionStorage.removeItem(this.fjSessionKey);
+            this.handleRouting(); return;
+        }
+        document.getElementById('view-access').classList.add('hidden');
+        document.getElementById('view-forcejoin').classList.add('hidden');
+        document.getElementById('view-account-form').classList.add('hidden');
+        document.getElementById('view-pending').classList.add('hidden');
+        document.getElementById('view-main').classList.remove('hidden');
+        document.getElementById('dash-user').textContent = session.name || 'Public Trader';
+        this.switchTab('indicators');
+    },
+
+    switchTab(tab, el) {
+        this.currentTab = tab;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (el) el.classList.add('active');
+        document.getElementById('search-input').value = '';
+        this.renderContent();
+    },
+
+    filterItems(query) { this.renderContent(query.toLowerCase()); },
+
+    getCat(item, def) { return (item.category || def).toLowerCase(); },
+
+    renderContent(query='') {
+        const content = document.getElementById('dash-content');
+        const q = query;
+        if (this.currentTab === 'indicators') {
+            let items = this.state.tools.filter(t => t.active && (this.getCat(t,'indicator') === 'indicator' || this.getCat(t,'indicator') === ''));
+            if (q) items = items.filter(t => t.name.toLowerCase().includes(q));
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Trading Indicators</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-solid fa-chart-line"></i><span>No indicators available</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Trading Indicators</h2><span class="count">'+items.length+'</span></div><div class="instrument-grid">' + items.map(t => {
+                const icon = t.iconType === 'img' && t.iconData ? '<img src="'+h(t.iconData)+'" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '<i class="'+(t.icon||'fa-solid fa-chart-line')+'"></i>';
+                return '<div class="instrument-card" data-tool-id="'+h(t.id)+'"><div class="icon-wrap green">'+icon+'</div><div class="name">'+h(t.name)+'</div><span class="badge">Indicator</span></div>';
+            }).join('') + '</div>';
+        } else if (this.currentTab === 'scripts') {
+            let items = this.state.tools.filter(t => t.active && this.getCat(t,'') === 'script');
+            if (q) items = items.filter(t => t.name.toLowerCase().includes(q));
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Trading Scripts</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-solid fa-code"></i><span>No scripts available</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Trading Scripts</h2><span class="count">'+items.length+'</span></div><div class="instrument-grid">' + items.map(t => {
+                const icon = t.iconType === 'img' && t.iconData ? '<img src="'+h(t.iconData)+'" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '<i class="'+(t.icon||'fa-solid fa-code')+'"></i>';
+                return '<div class="instrument-card" data-tool-id="'+h(t.id)+'"><div class="icon-wrap purple">'+icon+'</div><div class="name">'+h(t.name)+'</div><span class="badge">Script</span></div>';
+            }).join('') + '</div>';
+        } else if (this.currentTab === 'apps') {
+            let items = this.state.links.filter(l => l.active && (this.getCat(l,'app') === 'app' || this.getCat(l,'app') === ''));
+            if (q) items = items.filter(l => l.name.toLowerCase().includes(q));
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Trading Apps</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-brands fa-android"></i><span>No apps available</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Trading Apps</h2><span class="count">'+items.length+'</span></div><div class="apk-grid">' + items.map(l => {
+                const icon = l.iconType === 'img' && l.iconData ? '<img src="'+h(l.iconData)+'">' : '<i class="'+(l.icon||'fa-brands fa-android')+'"></i>';
+                return '<div class="apk-card" data-link-url="'+h(l.url)+'"><div class="apk-icon">'+icon+'</div><div class="apk-name">'+h(l.name)+'</div><div class="apk-type">APP</div></div>';
+            }).join('') + '</div>';
+        } else if (this.currentTab === 'bots') {
+            let items = this.state.links.filter(l => l.active && this.getCat(l,'') === 'bot');
+            if (q) items = items.filter(l => l.name.toLowerCase().includes(q));
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Trading Bots</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-solid fa-robot"></i><span>No bots available</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Trading Bots</h2><span class="count">'+items.length+'</span></div><div class="apk-grid">' + items.map(l => {
+                const icon = l.iconType === 'img' && l.iconData ? '<img src="'+h(l.iconData)+'">' : '<i class="'+(l.icon||'fa-solid fa-robot')+'"></i>';
+                return '<div class="apk-card" data-link-url="'+h(l.url)+'"><div class="apk-icon gold">'+icon+'</div><div class="apk-name">'+h(l.name)+'</div><div class="apk-type">BOT</div></div>';
+            }).join('') + '</div>';
+        } else if (this.currentTab === 'courses') {
+            let items = this.state.courses.filter(c => c.active && (this.getCat(c,'course') === 'course' || this.getCat(c,'course') === ''));
+            if (q) items = items.filter(c => c.name.toLowerCase().includes(q));
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Trading Courses</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-solid fa-graduation-cap"></i><span>No courses available</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Trading Courses</h2><span class="count">'+items.length+'</span></div>' + items.map(c => {
+                const poster = c.posterData ? '<img src="'+h(c.posterData)+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">' : '<i class="fa-solid fa-graduation-cap" style="font-size:1.2rem;"></i>';
+                const desc = c.description ? (c.description.length>50?c.description.substring(0,50)+'...':c.description) : '';
+                return '<div class="list-item" data-course-url="'+h(c.url)+'"><div class="li-icon" style="width:48px;height:48px;border-radius:6px;overflow:hidden;background:rgba(240,185,11,0.08);">'+poster+'</div><div class="li-body"><div class="li-name">'+h(c.name)+'</div>'+(desc?'<div class="li-sub">'+h(desc)+'</div>':'')+'<div class="li-sub" style="margin-top:1px;font-size:10px;color:var(--gold);">'+h((c.format||'Course').toUpperCase())+'</div></div><div class="li-arrow"><i class="fa-solid fa-chevron-right"></i></div></div>';
+            }).join('');
+        } else if (this.currentTab === 'books') {
+            let items = this.state.courses.filter(c => c.active && this.getCat(c,'') === 'book');
+            if (q) items = items.filter(c => c.name.toLowerCase().includes(q));
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Trading Books</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-solid fa-book"></i><span>No books available</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Trading Books</h2><span class="count">'+items.length+'</span></div>' + items.map(c => {
+                const poster = c.posterData ? '<img src="'+h(c.posterData)+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">' : '<i class="fa-solid fa-book" style="font-size:1.2rem;"></i>';
+                const desc = c.description ? (c.description.length>50?c.description.substring(0,50)+'...':c.description) : '';
+                return '<div class="list-item" data-course-url="'+h(c.url)+'"><div class="li-icon purple" style="width:48px;height:48px;border-radius:6px;overflow:hidden;">'+poster+'</div><div class="li-body"><div class="li-name">'+h(c.name)+'</div>'+(desc?'<div class="li-sub">'+h(desc)+'</div>':'')+'<div class="li-sub" style="margin-top:1px;font-size:10px;color:#AF52DE;">BOOK</div></div><div class="li-arrow"><i class="fa-solid fa-chevron-right"></i></div></div>';
+            }).join('');
+        } else if (this.currentTab === 'profile') {
+            const session = JSON.parse(sessionStorage.getItem(this.sessionKey) || '{}');
+            const keyName = h(session.key || 'GUEST'), userName = h(session.name || 'Public Trader');
+            content.innerHTML = '<div class="profile-card"><div class="profile-avatar"><i class="fa-solid fa-user"></i></div><div class="profile-name">'+userName+'</div><div class="profile-tag">ACTIVE TRADER</div></div><div class="profile-detail"><div class="row"><span class="label">License</span><span class="value" style="font-family:monospace;">'+keyName+'</span></div><div class="row"><span class="label">Tier</span><span class="value" style="color:var(--green);">Standard</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:var(--green);">Active</span></div></div><button class="btn-danger" onclick="App.terminateSession()"><i class="fa-solid fa-power-off"></i> End Session</button>';
+        } else if (this.currentTab === 'premium') {
+            this.renderPremiumContent();
+        }
+    },
+
+    renderPremiumContent() {
+        const content = document.getElementById('dash-content');
+        const premiumData = JSON.parse(sessionStorage.getItem(this.premiumSessionKey) || 'null');
+        const isGranted = premiumData && premiumData.access === true;
+        if (!isGranted && premiumData && premiumData.requestId) {
+            database.ref('premiumRequests').once('value', (snap) => {
+                const requests = snap.val() || [];
+                const req = requests.find(r => r.id === premiumData.requestId);
+                if (req && req.status === 'approved') { sessionStorage.setItem(this.premiumSessionKey, JSON.stringify({ access: true, method: 'payment', requestId: premiumData.requestId })); this.renderPremiumContent(); this.toast('Premium access approved!'); }
+                else if (req && req.status === 'denied') { sessionStorage.removeItem(this.premiumSessionKey); this.renderPremiumContent(); this.toast('Payment request was denied','error'); }
+            });
+        }
+        if (isGranted) {
+            const items = this.state.premiumContent.filter(c => c.active);
+            if (!items.length) { content.innerHTML = '<div class="section-header"><h2>Premium Vault</h2><span class="count">0</span></div><div class="empty-state"><i class="fa-solid fa-crown" style="color:var(--gold);"></i><span>No premium content</span></div>'; return; }
+            content.innerHTML = '<div class="section-header"><h2>Premium Vault</h2><span class="count">'+items.length+'</span></div>' + items.map(c => {
+                const typeMap = { course:'fa-solid fa-graduation-cap', apk:'fa-brands fa-android', video:'fa-solid fa-video', image:'fa-solid fa-image', zip:'fa-solid fa-file-zipper' };
+                const iconHtml = c.iconType === 'img' && c.iconData ? '<img src="'+h(c.iconData)+'" style="width:100%;height:100%;object-fit:cover;">' : '<i class="'+(c.icon||typeMap[c.type]||'fa-solid fa-cube')+'" style="color:var(--gold);"></i>';
+                const typeLabels = { course:'Course', apk:'APK', video:'Video', image:'Image', zip:'ZIP' };
+                return '<div class="list-item" style="border-color:rgba(240,185,11,0.3);" onclick="window.open(\''+h(c.url)+'\',\'_blank\')"><div class="li-icon" style="background:rgba(240,185,11,0.1);">'+iconHtml+'</div><div class="li-body"><div class="li-name" style="color:var(--gold);">'+h(c.name)+'</div><div class="li-sub">'+h(typeLabels[c.type]||c.type||'Content')+'</div></div><div class="li-arrow" style="color:var(--gold);"><i class="fa-solid fa-chevron-right"></i></div></div>';
+            }).join('');
+        } else {
+            const cfg = this.state.premiumConfig;
+            const bankName = h(cfg.bankName||'EasyPaisa'), account = h(cfg.accountNumber||'03238693440'), receiver = h(cfg.receiverName||'Receiver'), amount = cfg.amount||500;
+            content.innerHTML = '<div class="section-header"><h2>Premium Access</h2></div><div class="premium-banner"><i class="fa-solid fa-crown"></i><h3>Unlock Premium Tools</h3><p>Get exclusive indicators, courses, and apps</p></div><div class="premium-section"><h4><i class="fa-solid fa-building-columns" style="color:var(--green);"></i> Pay &amp; Request Access</h4><div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;font-size:13px;line-height:1.7;"><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--text2);">Bank:</span><span style="font-weight:600;">'+bankName+'</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--text2);">Account:</span><span style="font-weight:600;font-family:monospace;">'+account+'</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--text2);">Receiver:</span><span style="font-weight:600;">'+receiver+'</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid var(--border);margin-top:6px;padding-top:8px;"><span style="color:var(--text2);">Amount:</span><span style="font-weight:700;color:var(--gold);font-size:16px;">Rs '+amount+'</span></div></div><form onsubmit="App.submitPaymentRequest(event)"><input type="tel" id="payment-whatsapp" class="access-input" placeholder="Your WhatsApp" required><button type="submit" class="btn-primary" style="background:var(--gold);color:#000;"><i class="fa-solid fa-paper-plane"></i> Request Access</button></form></div><div class="divider" style="margin:12px 0;">or</div><div class="premium-section"><h4><i class="fa-solid fa-key" style="color:var(--cyan);"></i> Have a Premium Key?</h4><form onsubmit="App.submitPremiumKey(event)"><input type="text" id="premium-key-input" class="access-input" placeholder="Enter Premium Key" required><button type="submit" class="btn-primary"><i class="fa-solid fa-unlock-keyhole"></i> Unlock Premium</button></form></div>';
+        }
+    },
+
+    submitPaymentRequest(e) {
+        e.preventDefault();
+        const whatsapp = document.getElementById('payment-whatsapp').value.trim();
+        if (!whatsapp) { this.toast('Enter your WhatsApp number','error'); return; }
+        const id = 'pr_' + Math.random().toString(36).substr(2,9);
+        const request = { id, whatsapp, status: 'pending', time: new Date().toISOString() };
+        database.ref('premiumRequests').once('value', (snap) => { const arr = snap.val() || []; arr.push(request); database.ref('premiumRequests').set(arr).then(() => { sessionStorage.setItem(this.premiumSessionKey, JSON.stringify({ access: false, requestId: id })); this.toast('Request sent! Wait for approval.'); this.renderPremiumContent(); }).catch(() => { this.toast('Failed to send','error'); }); });
+    },
+
+    submitPremiumKey(e) {
+        e.preventDefault();
+        const keyStr = document.getElementById('premium-key-input').value.trim();
+        if (!keyStr) { this.toast('Enter a premium key','error'); return; }
+        const keyData = this.state.premiumKeys.find(k => k.key === keyStr && k.active);
+        if (!keyData) { this.toast('Invalid premium key','error'); return; }
+        if (keyData.expiry && new Date(keyData.expiry) < new Date()) { this.toast('Premium key expired','error'); return; }
+        const keyIndex = this.state.premiumKeys.indexOf(keyData);
+        database.ref('premiumKeys/'+keyIndex+'/uses').transaction(c=>(c||0)+1, (err,committed,snap) => {
+            if (err||!committed){this.toast('Error','error');return;}
+            const nc=snap.val();
+            if(keyData.limit>0&&nc>keyData.limit){this.toast('Key limit reached','error');database.ref('premiumKeys/'+keyIndex+'/uses').transaction(c=>(c||1)-1);return;}
+            keyData.uses=nc;
+            sessionStorage.setItem(this.premiumSessionKey,JSON.stringify({access:true,method:'key',key:keyStr}));
+            this.toast('Premium unlocked!');
+            this.renderPremiumContent();
+        });
+    },
+
+    openTool(id) { const tool = this.state.tools.find(t => t.id === id); if (!tool) return; const w = window.open('', '_blank'); w.document.write(tool.html || '<h1>No content</h1>'); w.document.close(); },
+
+    terminateSession() {
+        sessionStorage.removeItem(this.sessionKey); sessionStorage.removeItem(this.fjSessionKey); sessionStorage.removeItem(this.premiumSessionKey); sessionStorage.removeItem(this.regSessionKey);
+        this.tgClicked=false;this.waClicked=false;
+        document.getElementById('view-main').classList.add('hidden');
+        this.handleRouting(); this.toast('Session terminated');
+    }
+};
+App.init();
+</script>
+</body>
+</html>
